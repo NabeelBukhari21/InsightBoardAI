@@ -5,6 +5,7 @@ import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import { feedbackReasons } from "@/data/mockData";
 import { Reveal } from "@/components/motion/MotionKit";
+import { useTeacherInsight } from "@/components/teacher/TeacherInsightProvider";
 
 const categoryColors: Record<string, { bg: string; text: string; label: string }> = {
     pacing: { bg: "bg-warning/15", text: "text-warning", label: "Pacing" },
@@ -15,6 +16,10 @@ const categoryColors: Record<string, { bg: string; text: string; label: string }
 };
 
 export default function FeedbackReasonsCard() {
+    const { data, isLoading } = useTeacherInsight();
+    const fallbackTakeaway = "76% of disengagement was related to pacing and clarity — not content difficulty itself. Students specifically requested more visual examples and slower delivery.";
+    const takeaway = data?.feedbackSummary || fallbackTakeaway;
+
     return (
         <Reveal delay={0.2} duration={0.6}>
             <Card className="relative overflow-hidden">
@@ -64,15 +69,22 @@ export default function FeedbackReasonsCard() {
 
                     {/* Summary */}
                     <div className="mt-5 glass-card p-3 bg-warning/5 border-warning/10">
-                        <div className="flex items-start gap-2">
-                            <span className="text-sm mt-0.5">💡</span>
-                            <div>
-                                <p className="text-xs font-semibold text-warning mb-0.5">Key Takeaway</p>
-                                <p className="text-xs text-muted leading-relaxed">
-                                    <strong className="text-foreground">76% of disengagement</strong> was related to pacing and clarity — not content difficulty itself. Students specifically requested more visual examples and slower delivery.
-                                </p>
+                        {isLoading ? (
+                            <div className="animate-pulse space-y-2">
+                                <div className="h-4 w-1/4 bg-warning/20 rounded" />
+                                <div className="h-8 bg-warning/10 rounded" />
                             </div>
-                        </div>
+                        ) : (
+                            <div className="flex items-start gap-2">
+                                <span className="text-sm mt-0.5">💡</span>
+                                <div>
+                                    <p className="text-xs font-semibold text-warning mb-0.5">Key Takeaway</p>
+                                    <p className="text-xs text-muted leading-relaxed">
+                                        <strong className="text-foreground">{takeaway}</strong>
+                                    </p>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <p className="text-[10px] text-muted mt-3 italic">

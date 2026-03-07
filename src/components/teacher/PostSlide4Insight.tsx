@@ -5,8 +5,15 @@ import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import { postSlide4Shifts } from "@/data/mockData";
 import { Reveal } from "@/components/motion/MotionKit";
+import { useTeacherInsight } from "@/components/teacher/TeacherInsightProvider";
 
 export default function PostSlide4Insight() {
+    const { data, isLoading } = useTeacherInsight();
+
+    const aiInsightTitle = data?.postSlide4?.insight || "Silver Lining";
+    const aiInsightDescription = data?.postSlide4?.impact ||
+        "Despite the dip, the live demo and real-world examples achieved full recovery to 91%. This suggests visual/practical content is highly effective for this class.";
+
     return (
         <Reveal delay={0.4} duration={0.6}>
             <Card className="relative overflow-hidden">
@@ -79,15 +86,22 @@ export default function PostSlide4Insight() {
 
                     {/* Summary insight */}
                     <div className="mt-4 glass-card p-3 bg-success/5 border-success/10">
-                        <div className="flex items-start gap-2">
-                            <span className="text-sm mt-0.5">✦</span>
-                            <div>
-                                <p className="text-xs font-semibold text-success mb-0.5">Silver Lining</p>
-                                <p className="text-xs text-muted">
-                                    Despite the dip, <strong className="text-foreground">the live demo and real-world examples achieved full recovery to 91%</strong>. This suggests visual/practical content is highly effective for this class.
-                                </p>
+                        {isLoading ? (
+                            <div className="animate-pulse space-y-2">
+                                <div className="h-4 w-1/3 bg-success/20 rounded" />
+                                <div className="h-8 bg-success/10 rounded" />
                             </div>
-                        </div>
+                        ) : (
+                            <div className="flex items-start gap-2">
+                                <span className="text-sm mt-0.5">✦</span>
+                                <div>
+                                    <p className="text-xs font-semibold text-success mb-0.5">{aiInsightTitle}</p>
+                                    <p className="text-xs text-muted">
+                                        {aiInsightDescription}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </Card>

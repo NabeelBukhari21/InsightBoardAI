@@ -4,9 +4,12 @@ import React from "react";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import { aiRecap } from "@/data/mockData";
-import { Reveal } from "@/components/motion/MotionKit";
+import { Reveal, GlowPulse } from "@/components/motion/MotionKit";
+import { useStudentInsight } from "@/components/student/StudentInsightProvider";
 
 export default function AIRecapCard() {
+    const { data, isLoading } = useStudentInsight();
+
     return (
         <Reveal delay={0.3} duration={0.6}>
             <Card className="relative overflow-hidden">
@@ -26,32 +29,49 @@ export default function AIRecapCard() {
                         </Badge>
                     </div>
 
-                    {/* Original — collapsed/subtle */}
-                    <div className="glass-card p-4 bg-white/[0.02] border-white/5 mb-3">
-                        <p className="text-[10px] font-semibold text-muted uppercase tracking-wider mb-1.5">What the lecture said</p>
-                        <p className="text-xs text-muted leading-relaxed">{aiRecap.originalExplanation}</p>
-                    </div>
-
-                    {/* Simpler — prominent */}
-                    <div className="glass-card p-5 bg-success/5 border-success/15 mb-4">
-                        <p className="text-[10px] font-semibold text-success uppercase tracking-wider mb-2">✨ Here&apos;s a simpler way to think about it</p>
-                        <p className="text-sm text-foreground leading-relaxed">{aiRecap.simplerExplanation}</p>
-                    </div>
-
-                    {/* Key Takeaways */}
-                    <div>
-                        <p className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2.5">Key Takeaways</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {aiRecap.keyTakeaways.map((t, i) => (
-                                <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors">
-                                    <div className="w-5 h-5 rounded-full bg-success/15 ring-1 ring-success/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <span className="text-success text-[10px]">✓</span>
-                                    </div>
-                                    <span className="text-xs text-muted leading-relaxed">{t}</span>
-                                </div>
-                            ))}
+                    {isLoading ? (
+                        <div className="animate-pulse space-y-4">
+                            <div className="h-20 bg-white/5 rounded-xl border border-white/5" />
+                            <div className="h-32 bg-success/5 rounded-xl border border-success/15" />
                         </div>
-                    </div>
+                    ) : (
+                        <>
+                            {data?.recap && (
+                                <p className="text-sm text-foreground leading-relaxed mb-4 border-l-2 border-accent pl-3">
+                                    {data.recap}
+                                </p>
+                            )}
+
+                            {/* Original — collapsed/subtle */}
+                            <div className="glass-card p-4 bg-white/[0.02] border-white/5 mb-3">
+                                <p className="text-[10px] font-semibold text-muted uppercase tracking-wider mb-1.5">What the lecture said</p>
+                                <p className="text-xs text-muted leading-relaxed">{aiRecap.originalExplanation}</p>
+                            </div>
+
+                            {/* Simpler — prominent */}
+                            <div className="glass-card p-5 bg-success/5 border-success/15 mb-4">
+                                <p className="text-[10px] font-semibold text-success uppercase tracking-wider mb-2">✨ Here&apos;s a simpler way to think about it</p>
+                                <p className="text-sm text-foreground leading-relaxed">
+                                    {data?.explanation || aiRecap.simplerExplanation}
+                                </p>
+                            </div>
+
+                            {/* Key Takeaways */}
+                            <div>
+                                <p className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2.5">Key Takeaways</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {aiRecap.keyTakeaways.map((t, i) => (
+                                        <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors">
+                                            <div className="w-5 h-5 rounded-full bg-success/15 ring-1 ring-success/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                <span className="text-success text-[10px]">✓</span>
+                                            </div>
+                                            <span className="text-xs text-muted leading-relaxed">{t}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
             </Card>
         </Reveal>

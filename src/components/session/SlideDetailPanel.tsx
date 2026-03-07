@@ -6,6 +6,7 @@ import Badge from "@/components/ui/Badge";
 import ProgressBar from "@/components/ui/ProgressBar";
 import { enrichedSlides, type EnrichedSlide } from "@/data/mockData";
 import { Reveal, StaggerContainer, StaggerItem } from "@/components/motion/MotionKit";
+import { useTeacherInsight } from "@/components/teacher/TeacherInsightProvider";
 
 const statusConfig: Record<string, { variant: "success" | "warning" | "danger" | "info" | "default"; label: string }> = {
     strong: { variant: "success", label: "✦ Strong" },
@@ -22,6 +23,13 @@ interface Props {
 export default function SlideDetailPanel({ selectedSlide }: Props) {
     const slide = enrichedSlides.find((s) => s.id === selectedSlide) || enrichedSlides[0];
     const cfg = statusConfig[slide.status];
+    const { data, isLoading } = useTeacherInsight();
+
+    // If we're on Slide 4, use the live Gemini recommendation (if available)
+    const isLiveSlide = selectedSlide === 4;
+    const recommendationText = isLiveSlide && data?.recommendation?.title
+        ? `${data.recommendation.title}: ${data.recommendation.description}`
+        : slide.recommendation;
 
     return (
         <Reveal key={slide.id} delay={0.2} duration={0.6}>
@@ -144,9 +152,18 @@ export default function SlideDetailPanel({ selectedSlide }: Props) {
                                     💡
                                 </div>
                                 <h4 className="text-sm font-bold text-foreground">AI Recommendation</h4>
-                                <Badge size="sm">Gemini</Badge>
+                                {isLiveSlide && <Badge size="sm" variant="success">✦ Live Gemini</Badge>}
+                                {!isLiveSlide && <Badge size="sm">Gemini</Badge>}
                             </div>
-                            <p className="text-sm text-foreground/80 leading-relaxed">{slide.recommendation}</p>
+
+                            {isLiveSlide && isLoading ? (
+                                <div className="animate-pulse space-y-2 mt-2">
+                                    <div className="h-4 bg-white/10 rounded w-full" />
+                                    <div className="h-4 bg-white/10 rounded w-3/4" />
+                                </div>
+                            ) : (
+                                <p className="text-sm text-foreground/80 leading-relaxed">{recommendationText}</p>
+                            )}
                         </div>
                     </Card>
                 </Reveal>

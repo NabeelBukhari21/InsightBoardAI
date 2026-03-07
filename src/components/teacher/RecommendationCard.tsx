@@ -6,6 +6,7 @@ import Badge from "@/components/ui/Badge";
 import ProgressBar from "@/components/ui/ProgressBar";
 import { teacherRecommendation } from "@/data/mockData";
 import { Reveal } from "@/components/motion/MotionKit";
+import { useTeacherInsight } from "@/components/teacher/TeacherInsightProvider";
 
 const typeConfig: Record<string, { icon: string; color: string; bg: string }> = {
     pacing: { icon: "⏱️", color: "text-warning", bg: "bg-warning/15" },
@@ -17,8 +18,11 @@ const typeConfig: Record<string, { icon: string; color: string; bg: string }> = 
 export default function RecommendationCard() {
     const rec = teacherRecommendation;
     const config = typeConfig[rec.type];
+    const { data, isLoading } = useTeacherInsight();
 
-    const detailedSteps = [
+    const titleText = data?.recommendation?.title || rec.title;
+    const descriptionText = data?.recommendation?.description || rec.description;
+    const detailedSteps = data?.recommendation?.steps || [
         "Break Slide 4 into two 7-minute segments",
         "Add a visual walkthrough before formal chain rule",
         "Insert a 2-minute pause for student questions",
@@ -49,49 +53,59 @@ export default function RecommendationCard() {
                         <Badge variant="success">{rec.confidence}% confidence</Badge>
                     </div>
 
-                    {/* Main recommendation */}
-                    <div className="glass-card p-5 bg-accent/[0.03] border-accent/10 mb-4">
-                        <h4 className="text-base font-bold text-foreground mb-2">{rec.title}</h4>
-                        <p className="text-sm text-muted leading-relaxed mb-3">{rec.description}</p>
-
-                        <div className="flex items-center gap-3">
-                            <span className="text-xs text-muted">Confidence</span>
-                            <ProgressBar value={rec.confidence} size="sm" className="flex-1 max-w-32" />
-                            <span className="text-xs font-bold text-success">{rec.confidence}%</span>
+                    {isLoading ? (
+                        <div className="animate-pulse space-y-4">
+                            <div className="h-28 bg-white/5 rounded-xl border border-white/5" />
+                            <div className="h-24 bg-white/5 rounded-xl border border-white/5" />
+                            <div className="h-20 bg-white/5 rounded-xl border border-white/5" />
                         </div>
-                    </div>
+                    ) : (
+                        <>
+                            {/* Main recommendation */}
+                            <div className="glass-card p-5 bg-accent/[0.03] border-accent/10 mb-4">
+                                <h4 className="text-base font-bold text-foreground mb-2">{titleText}</h4>
+                                <p className="text-sm text-muted leading-relaxed mb-3">{descriptionText}</p>
 
-                    {/* Suggested steps */}
-                    <div className="mb-4">
-                        <p className="text-xs font-semibold text-foreground uppercase tracking-wider mb-3">Suggested Approach</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {detailedSteps.map((step, i) => (
-                                <div key={i} className="flex items-start gap-2 p-2 rounded-lg hover:bg-white/[0.02] transition-colors">
-                                    <div className="w-5 h-5 rounded-full bg-accent/15 ring-1 ring-accent/20 flex items-center justify-center text-[10px] font-bold text-accent-light flex-shrink-0">
-                                        {i + 1}
-                                    </div>
-                                    <span className="text-xs text-muted">{step}</span>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-xs text-muted">Confidence</span>
+                                    <ProgressBar value={rec.confidence} size="sm" className="flex-1 max-w-32" />
+                                    <span className="text-xs font-bold text-success">{rec.confidence}%</span>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
+                            </div>
 
-                    {/* Supporting data */}
-                    <div className="glass-card p-4 bg-white/[0.01] border-white/5">
-                        <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Supporting Data</p>
-                        <div className="grid grid-cols-2 gap-3">
-                            {relatedData.map((item, i) => (
-                                <div key={i} className="flex items-center justify-between">
-                                    <span className="text-xs text-muted">{item.label}</span>
-                                    <span className={`text-xs font-bold ${item.trend === "high" ? "text-danger" :
-                                        item.trend === "low" ? "text-warning" :
-                                            item.trend === "positive" ? "text-success" :
-                                                "text-accent-light"
-                                        }`}>{item.value}</span>
+                            {/* Suggested steps */}
+                            <div className="mb-4">
+                                <p className="text-xs font-semibold text-foreground uppercase tracking-wider mb-3">Suggested Approach</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {detailedSteps.map((step, i) => (
+                                        <div key={i} className="flex items-start gap-2 p-2 rounded-lg hover:bg-white/[0.02] transition-colors">
+                                            <div className="w-5 h-5 rounded-full bg-accent/15 ring-1 ring-accent/20 flex items-center justify-center text-[10px] font-bold text-accent-light flex-shrink-0">
+                                                {i + 1}
+                                            </div>
+                                            <span className="text-xs text-muted">{step}</span>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-                    </div>
+                            </div>
+
+                            {/* Supporting data */}
+                            <div className="glass-card p-4 bg-white/[0.01] border-white/5">
+                                <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Supporting Data</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {relatedData.map((item, i) => (
+                                        <div key={i} className="flex items-center justify-between">
+                                            <span className="text-xs text-muted">{item.label}</span>
+                                            <span className={`text-xs font-bold ${item.trend === "high" ? "text-danger" :
+                                                item.trend === "low" ? "text-warning" :
+                                                    item.trend === "positive" ? "text-success" :
+                                                        "text-accent-light"
+                                                }`}>{item.value}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </>
+                    )}
 
                     <div className="mt-3 flex items-center gap-2">
                         <Badge>Gemini</Badge>

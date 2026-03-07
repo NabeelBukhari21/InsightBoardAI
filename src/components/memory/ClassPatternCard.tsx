@@ -5,8 +5,11 @@ import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import ProgressBar from "@/components/ui/ProgressBar";
 import { Reveal, AnimatedCounter } from "@/components/motion/MotionKit";
+import { useMemoryInsight } from "@/components/memory/MemoryInsightProvider";
 
 export default function ClassPatternCard() {
+    const { data, isLoading } = useMemoryInsight();
+
     return (
         <Reveal delay={0.2} duration={0.6}>
             <Card className="relative overflow-hidden" glow>
@@ -21,18 +24,28 @@ export default function ClassPatternCard() {
                         <Badge variant="warning">High Confidence</Badge>
                     </div>
 
-                    <div className="glass-card p-5 bg-warning/[0.04] border-warning/15 mb-4">
-                        <p className="text-base font-bold text-foreground leading-relaxed mb-2">
-                            &ldquo;Theory-heavy slides without visual support consistently reduce engagement by 30–40% across all sessions&rdquo;
-                        </p>
-                        <p className="text-sm text-muted leading-relaxed">
-                            This class responds strongly to visual, example-based teaching and struggles when content shifts to abstract mathematical notation without adequate scaffolding. This is not a reflection of student capability — it&apos;s a content delivery pattern.
-                        </p>
-                        <div className="flex items-center gap-3 mt-3">
-                            <span className="text-xs text-muted">Pattern confidence</span>
-                            <ProgressBar value={94} size="sm" className="flex-1 max-w-40" />
-                            <span className="text-xs font-bold text-warning"><AnimatedCounter value={94} />%</span>
-                        </div>
+                    <div className="glass-card p-5 bg-warning/[0.04] border-warning/15 mb-4 relative min-h-[140px]">
+                        {isLoading ? (
+                            <div className="animate-pulse space-y-3">
+                                <div className="h-5 bg-white/10 rounded w-full" />
+                                <div className="h-4 bg-white/5 rounded w-5/6" />
+                                <div className="h-4 bg-white/5 rounded w-4/6" />
+                            </div>
+                        ) : (
+                            <>
+                                <p className="text-base font-bold text-foreground leading-relaxed mb-2">
+                                    &ldquo;{data?.classPattern.quote}&rdquo;
+                                </p>
+                                <p className="text-sm text-muted leading-relaxed">
+                                    {data?.classPattern.detail}
+                                </p>
+                                <div className="flex items-center gap-3 mt-3">
+                                    <span className="text-xs text-muted">Pattern confidence</span>
+                                    <ProgressBar value={94} size="sm" className="flex-1 max-w-40" />
+                                    <span className="text-xs font-bold text-warning"><AnimatedCounter value={94} />%</span>
+                                </div>
+                            </>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-3 gap-3 mb-4">
@@ -51,9 +64,13 @@ export default function ClassPatternCard() {
                     </div>
 
                     <div className="glass-card p-3 bg-success/5 border-success/10">
-                        <p className="text-xs text-muted">
-                            <span className="font-semibold text-success">✦ Actionable:</span> Lead with visual examples to set context, <em>then</em> introduce formal notation. The class demonstrated they can handle complexity when scaffolded properly (Slide 6: 91% after Slide 4&apos;s 45%).
-                        </p>
+                        {isLoading ? (
+                            <div className="animate-pulse h-4 bg-success/20 rounded w-full" />
+                        ) : (
+                            <p className="text-xs text-muted">
+                                <span className="font-semibold text-success">✦ AI Recommendation (Gemini):</span> {data?.classPattern.actionable}
+                            </p>
+                        )}
                     </div>
                 </div>
             </Card>
