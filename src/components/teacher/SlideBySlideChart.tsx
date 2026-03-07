@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
     BarChart,
     Bar,
@@ -14,7 +14,7 @@ import {
 } from "recharts";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
-import { slideBarData } from "@/data/mockData";
+import { slideBarData, type SlideBarData } from "@/data/mockData";
 import { Reveal } from "@/components/motion/MotionKit";
 
 interface CustomTooltipProps {
@@ -47,6 +47,32 @@ function getBarColor(engagement: number, isDip: boolean): string {
 }
 
 export default function SlideBySlideChart() {
+    const [chartData, setChartData] = useState<SlideBarData[]>(slideBarData);
+
+    useEffect(() => {
+        fetch("/api/presage")
+            .then((r) => r.json())
+            .then((data) => {
+                if (Array.isArray(data.slideEngagement) && data.slideEngagement.length > 0) {
+                    const engMap: Record<number, number> = {};
+                    for (const s of data.slideEngagement) {
+                        engMap[s.id] = s.engagement;
+                    }
+                    setChartData(
+                        slideBarData.map((entry, i) => {
+                            const eng = engMap[i + 1] ?? entry.engagement;
+                            return { ...entry, engagement: eng, isDip: eng < 60 };
+                        })
+                    );
+                }
+            })
+            .catch(() => {
+                // silently keep mock fallback
+            });
+    }, []);
+
+    const dipSlide = chartData.find((s) => s.isDip);
+
     return (
         <Reveal delay={0.1} duration={0.6}>
             <Card>
@@ -55,15 +81,17 @@ export default function SlideBySlideChart() {
                         <h3 className="text-lg font-bold text-foreground">Slide-by-Slide Engagement</h3>
                         <p className="text-sm text-muted mt-0.5">All 6 slides — Slide 4 is the clear breakdown point</p>
                     </div>
-                    <Badge variant="danger">
-                        <span className="w-2 h-2 rounded-full bg-danger animate-pulse-dot inline-block mr-1.5" />
-                        Slide 4: 45%
-                    </Badge>
+                    {dipSlide && (
+                        <Badge variant="danger">
+                            <span className="w-2 h-2 rounded-full bg-danger animate-pulse-dot inline-block mr-1.5" />
+                            {dipSlide.slide}: {dipSlide.engagement}%
+                        </Badge>
+                    )}
                 </div>
 
                 <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={slideBarData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }} barSize={40}>
+                        <BarChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }} barSize={40}>
                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
                             <XAxis
                                 dataKey="slide"
@@ -83,7 +111,7 @@ export default function SlideBySlideChart() {
                             <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.02)" }} />
                             <ReferenceLine y={60} stroke="#f59e0b" strokeDasharray="6 4" strokeOpacity={0.5} />
                             <Bar dataKey="engagement" radius={[8, 8, 2, 2]} animationDuration={1500} animationEasing="ease-out">
-                                {slideBarData.map((entry, i) => (
+                                {chartData.map((entry, i) => (
                                     <Cell
                                         key={`cell-${i}`}
                                         fill={getBarColor(entry.engagement, entry.isDip)}
@@ -99,7 +127,7 @@ export default function SlideBySlideChart() {
 
                 {/* Slide labels */}
                 <div className="grid grid-cols-6 gap-1 mt-3">
-                    {slideBarData.map((s, i) => (
+                    {chartData.map((s, i) => (
                         <div key={i} className={`text-center text-[10px] leading-tight px-1 py-1.5 rounded-lg ${s.isDip ? "bg-danger/10 text-danger font-semibold" : "text-muted"
                             }`}>
                             {s.fullLabel.length > 20 ? s.fullLabel.slice(0, 18) + "…" : s.fullLabel}

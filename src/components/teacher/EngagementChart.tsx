@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
     AreaChart,
     Area,
@@ -14,7 +14,7 @@ import {
 } from "recharts";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
-import { engagementTimeline } from "@/data/mockData";
+import { engagementTimeline, type EngagementPoint } from "@/data/mockData";
 import { Reveal } from "@/components/motion/MotionKit";
 
 interface CustomTooltipProps {
@@ -39,6 +39,21 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
 }
 
 export default function EngagementChart() {
+    const [chartData, setChartData] = useState<EngagementPoint[]>(engagementTimeline);
+
+    useEffect(() => {
+        fetch("/api/presage")
+            .then((r) => r.json())
+            .then((data) => {
+                if (Array.isArray(data.timeline) && data.timeline.length > 0) {
+                    setChartData(data.timeline);
+                }
+            })
+            .catch(() => {
+                // silently keep mock fallback
+            });
+    }, []);
+
     return (
         <Reveal delay={0.2} duration={0.6}>
             <Card>
@@ -55,7 +70,7 @@ export default function EngagementChart() {
 
                 <div className="h-72">
                     <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={engagementTimeline} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                        <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
                             <defs>
                                 <linearGradient id="engGradient" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />

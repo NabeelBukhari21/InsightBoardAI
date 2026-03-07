@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Badge from "@/components/ui/Badge";
 import { enrichedSlides, type EnrichedSlide } from "@/data/mockData";
 import { StaggerContainer, StaggerItem } from "@/components/motion/MotionKit";
@@ -26,12 +26,37 @@ interface Props {
 }
 
 export default function SessionTimeline({ selectedSlide, onSelectSlide }: Props) {
+    const [slides, setSlides] = useState<EnrichedSlide[]>(enrichedSlides);
+
+    useEffect(() => {
+        fetch("/api/presage")
+            .then((r) => r.json())
+            .then((data) => {
+                if (Array.isArray(data.slideEngagement) && data.slideEngagement.length > 0) {
+                    const engMap: Record<number, number> = {};
+                    for (const s of data.slideEngagement) {
+                        engMap[s.id] = s.engagement;
+                    }
+                    setSlides(
+                        enrichedSlides.map((slide) => {
+                            const eng = engMap[slide.id];
+                            if (eng === undefined) return slide;
+                            return { ...slide, engagement: eng };
+                        })
+                    );
+                }
+            })
+            .catch(() => {
+                // silently keep mock fallback
+            });
+    }, []);
+
     return (
         <StaggerContainer delay={0.4} stagger={0.06} className="space-y-0">
-            {enrichedSlides.map((slide, i) => {
+            {slides.map((slide, i) => {
                 const cfg = statusConfig[slide.status];
                 const isSelected = selectedSlide === slide.id;
-                const isLast = i === enrichedSlides.length - 1;
+                const isLast = i === slides.length - 1;
 
                 return (
                     <StaggerItem key={slide.id}>
