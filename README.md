@@ -10,11 +10,11 @@ Built for the **Google Antigravity Hackathon**.
 
 InsightBoard AI closes the feedback loop between student engagement and teaching:
 
-1. **Detect** — Real-time engagement analysis via browser-based computer vision (MediaPipe)
-2. **Map** — Dips are mapped to the specific slide and topic causing confusion
-3. **Reflect** — Students are asked why they disengaged (not assumed)
+1. **Detect** — Real-time engagement and participation analysis via browser-based computer vision (MediaPipe Face & Hand Landmarkers)
+2. **Map** — Dips and participation events (hand raises, questions) are mapped to the specific slide and topic
+3. **Reflect** — Students are asked why they disengaged or what sparked their question
 4. **Recap** — AI generates a personalized simpler explanation + review questions (Gemini)
-5. **Improve** — Teachers receive aggregated class-level insights and teaching suggestions
+5. **Improve** — Teachers receive aggregated class-level insights, participation trends, and teaching suggestions
 6. **Remember** — Recurring patterns are tracked across sessions (Backboard)
 7. **Verify** — Every data access is logged with tamper-evident proofs (Solana)
 
@@ -25,7 +25,7 @@ InsightBoard AI closes the feedback loop between student engagement and teaching
 | Technology | Role | What It Does |
 |---|---|---|
 | **Gemini API** | Content Intelligence | AI recaps, simpler explanations, worked examples, quiz generation, teaching recommendations |
-| **MediaPipe** | Engagement Detection | On-device, privacy-first engagement sensing via Face Landmarker — outputs learning-relevant state labels (focused, confused, distracted, reengaged) without storing raw media |
+| **MediaPipe** | Engagement & Participation | On-device, privacy-first sensing via Face & Hand Landmarkers — outputs learning-relevant state labels (focused, confused, distracted, reengaged) and interaction events (hand raises, possible questions) without storing raw media |
 | **Backboard** | Long-Term Memory & Orchestration | **Fully Integrated API:** Uses the official Backboard SDK for robust state persistence. Employs a dual-assistant architecture (Session vs. Long-Term), dedicated Threads per student/teacher, Document Uploads for RAG, and JSON Tool Calls for fetching cross-session analytics. |
 | **React Three Fiber** | 3D Immersive Learning | Browser-based WebXR layer offering interactive 3D visualizations for complex architectural concepts (e.g., Backpropagation) without requiring a VR headset. |
 | **Solana** | Audit Verification | Tamper-evident hash proofs for data access, consent receipts, deletion confirmations (hashes only, no content on-chain) |
@@ -35,13 +35,13 @@ InsightBoard AI closes the feedback loop between student engagement and teaching
 ## Architecture
 
 ```
-Student Browser (MediaPipe Face Landmarker — WASM, runs 100% in-browser)
-    ↓ face signals: head pose, gaze, eye openness, movement, mouth activity
+Student Browser (MediaPipe Face & Hand Landmarkers — WASM, runs 100% in-browser)
+    ↓ signals: head pose, gaze, eye openness, movement, mouth activity, hand raised
 Session Engine (SessionEngineProvider)
-    ↓ per-student tracking, per-slide analytics, dip/recovery detection
-    ↓ → Teacher Dashboard (aggregated, anonymized)
-    ↓ → Student Dashboard (personal engagement journey)
-    ↓ → Session Timeline (auto-built from live data)
+    ↓ per-student tracking, per-slide analytics, dip/recovery detection, participation metrics
+    ↓ → Teacher Dashboard (aggregated, anonymized participation & engagement)
+    ↓ → Student Dashboard (personal engagement journey & participation counts)
+    ↓ → Session Timeline (auto-built from live data: hand raises, questions, confusion)
 Gemini API
     ↓ personalized recap (student-private) + aggregated insights (teacher)
 Backboard Agent Architecture (Real API Integration)
@@ -69,15 +69,17 @@ Solana
 The live demo (`/live-demo`) is the **central session engine** that drives the entire app with real data.
 
 ### How It Works
-- **MediaPipe Face Landmarker** runs as a WASM module in the browser
-- Tracks **up to 5 students** simultaneously from a single webcam
+- **MediaPipe Face & Hand Landmarkers** run as WASM modules in the browser
+- Tracks **up to 5 students** and their hand positions simultaneously from a webcam
 - Extracts per-face signals every 200ms:
   - Face present / absent
   - Head pose (yaw, pitch)
   - Eye openness / blink approximation
   - Gaze stability
   - Movement stability
-  - Mouth activity (heuristic)
+  - Mouth activity (heuristic for speaking)
+  - Hand raised (direct measurement + spatial edge-triggering)
+  - Possible question (compound heuristic: hand raised + mouth activity)
   - Head down (heuristic)
   - Possible drowsiness (compound heuristic)
 - Maps signals → engagement states via a decision tree
@@ -94,9 +96,9 @@ The live demo (`/live-demo`) is the **central session engine** that drives the e
 
 | Tier | Signals |
 |---|---|
-| ✅ **Direct Measurements** | Face detection, head pose (yaw/pitch), eye openness, gaze stability, movement |
-| 🔧 **Heuristic Approximations** | Mouth activity, head down, drowsiness, engagement states |
-| 🧪 **Experimental / Future** | Hand raise, sleeping, phone use, question asking |
+| ✅ **Direct Measurements** | Face detection, head pose, eye openness, gaze stability, movement, **hand raise** |
+| 🔧 **Heuristic Approximations** | Mouth activity, head down, drowsiness, engagement states, **possible question asked** |
+| 🧪 **Experimental / Future** | Sleeping, phone use, specific gesture mapping |
 
 ---
 
@@ -221,7 +223,7 @@ npm run build
 | **Styling** | Tailwind CSS 4 |
 | **3D WebXR** | React Three Fiber, Three.js, Drei |
 | **Charts** | Recharts |
-| **Computer Vision** | MediaPipe Face Landmarker (WASM) |
+| **Computer Vision** | MediaPipe Face & Hand Landmarkers (WASM) |
 | **Orchestration** | Backboard SDK (Assistants, Threads, Memory, ToolCalls) |
 | **PPTX Parsing** | JSZip |
 | **State Management** | React Context + useSyncExternalStore |
@@ -240,7 +242,7 @@ npm run build
 | **3D Immersive Layer**| ✅ Real | React Three Fiber WebGL canvas rendering complex neural network concepts interactively |
 | **Backboard** | ✅ Real | Fully integrated Backboard Node SDK utilizing robust Assistants, Threads, ToolCalls, and Documents. Includes a secure server-side proxy system and graceful `MOCK_BACKBOARD` token-saving fallbacks. |
 | **Solana** | 🔶 Simulated | Audit proofs generated via `SolanaProvider` using real SHA-256 hashes locally |
-| **Student Data** | 🔶 Demo | All profiles, reflections, and class participation metrics are demo data (replaced by live session data when camera is active) |
+| **Student Data** | 🔶 Demo | All profiles, reflections, and class participation metrics are demo data (replaced by live session data when camera is active) — **Now includes real hand-raise counting** |
 
 ---
 
