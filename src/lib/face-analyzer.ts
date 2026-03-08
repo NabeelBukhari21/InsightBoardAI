@@ -114,17 +114,27 @@ export class FaceAnalyzer {
         const originalConsoleLog = console.log;
 
         try {
-            // MediaPipe Wasm runtime logs "INFO" messages to the console which Next.js captures as fatal React errors.
+            // MediaPipe Wasm runtime logs "INFO" messages and "W" warnings to the console which Next.js captures as fatal React errors.
             // We suppress all console methods during the tight detection call and filter known benign strings.
-            const filter = (...args: any[]) => {
+            const createFilter = (original: (...args: any[]) => void) => (...args: any[]) => {
                 const msg = args.map(String).join(" ");
-                if (msg.includes("XNNPACK delegate") || msg.includes("INFO:") || msg.includes("TensorFlow Lite")) return;
-                originalConsoleError(...args);
+                // MediaPipe logs follow a specific format like "W0308 12:10:40..." or "I0308 12:10:40..."
+                // Next.js interprets any "W" or "I" followed by digits at the start of a message as a fatal error sometimes.
+                const isMediaPipeLog = /^[WI]\d{4}\s/.test(msg) ||
+                    msg.includes("XNNPACK delegate") ||
+                    msg.includes("INFO:") ||
+                    msg.includes("TensorFlow Lite") ||
+                    msg.includes("NORM_RECT") ||
+                    msg.includes("landmark_projection") ||
+                    msg.includes("IMAGE_DIMENSIONS");
+
+                if (isMediaPipeLog) return;
+                original(...args);
             };
 
-            console.error = filter;
-            console.warn = filter;
-            console.log = filter;
+            console.error = createFilter(originalConsoleError);
+            console.warn = createFilter(originalConsoleWarn);
+            console.log = createFilter(originalConsoleLog);
 
             faceResults = this.faceLandmarker.detectForVideo(video, timestampMs);
             handResults = this.handLandmarker.detectForVideo(video, timestampMs);
